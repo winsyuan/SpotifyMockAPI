@@ -46,14 +46,28 @@ public class ProfileController {
 		this.playlistDriver = playlistDriver;
 	}
 
+//	figure out how to properly return the response
 	@RequestMapping(value = "/profile", method = RequestMethod.POST)
 	public @ResponseBody Map<String, Object> addProfile(@RequestParam Map<String, String> params,
 			HttpServletRequest request) {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("POST %s", Utils.getUrl(request)));
-
-		return null;
+		
+		DbQueryStatus status;
+		if(!(params.containsKey(KEY_USER_NAME) && params.containsKey(KEY_USER_FULLNAME) && params.containsKey(KEY_USER_PASSWORD))) {
+			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+//			fix this, its giving 200 response code
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+			return response;
+		}
+		String userName = params.get(KEY_USER_NAME);
+		String fullName = params.get(KEY_USER_FULLNAME);
+		String password = params.get(KEY_USER_PASSWORD);
+		
+		status = profileDriver.createUserProfile(userName, fullName, password);
+		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+		return response;
 	}
 
 	@RequestMapping(value = "/followFriend/{userName}/{friendUserName}", method = RequestMethod.PUT)
@@ -63,7 +77,16 @@ public class ProfileController {
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 		
-		return null;
+		DbQueryStatus status;
+		if(userName.equals(null) || friendUserName.equals(null)) {
+			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+//			fix this, its giving 200 response code
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+			return response;
+		}
+		status = profileDriver.followFriend(userName, friendUserName);
+		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+		return response;
 	}
 
 	@RequestMapping(value = "/getAllFriendFavouriteSongTitles/{userName}", method = RequestMethod.GET)
