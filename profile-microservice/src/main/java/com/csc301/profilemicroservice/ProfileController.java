@@ -47,6 +47,7 @@ public class ProfileController {
 	}
 
 //	figure out how to properly return the response
+//	fix the messages in response
 	@RequestMapping(value = "/profile", method = RequestMethod.POST)
 	public @ResponseBody Map<String, Object> addProfile(@RequestParam Map<String, String> params,
 			HttpServletRequest request) {
@@ -57,7 +58,6 @@ public class ProfileController {
 		DbQueryStatus status;
 		if(!(params.containsKey(KEY_USER_NAME) && params.containsKey(KEY_USER_FULLNAME) && params.containsKey(KEY_USER_PASSWORD))) {
 			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
-//			fix this, its giving 200 response code
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 			return response;
 		}
@@ -80,7 +80,6 @@ public class ProfileController {
 		DbQueryStatus status;
 		if(userName.equals(null) || friendUserName.equals(null)) {
 			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
-//			fix this, its giving 200 response code
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 			return response;
 		}
@@ -106,8 +105,16 @@ public class ProfileController {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
-
-		return null;
+		
+		DbQueryStatus status;
+		if(userName.equals(null) || friendUserName.equals(null)) {
+			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+			return response;
+		}
+		status = profileDriver.unfollowFriend(userName, friendUserName);
+		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+		return response;
 	}
 
 	@RequestMapping(value = "/likeSong/{userName}/{songId}", method = RequestMethod.PUT)
