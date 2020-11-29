@@ -12,6 +12,8 @@ import org.neo4j.driver.v1.StatementResult;
 
 import org.springframework.stereotype.Repository;
 import org.neo4j.driver.v1.Transaction;
+import org.neo4j.driver.v1.Value;
+import org.neo4j.driver.v1.Values;
 
 @Repository
 public class ProfileDriverImpl implements ProfileDriver {
@@ -40,8 +42,17 @@ public class ProfileDriverImpl implements ProfileDriver {
 	
 	@Override
 	public DbQueryStatus createUserProfile(String userName, String fullName, String password) {
-		
-		return null;
+//		need to check if user is already in database
+		try (Session session = driver.session()) {
+			try (Transaction trans = session.beginTransaction()) {
+				String queryStr = "CREATE (p:profile {userName: $x, fullName: $y, password: $z})";
+				trans.run(queryStr, Values.parameters("x", userName, "y", fullName, "z", password));
+				trans.success();
+			} 
+			session.close();
+		}
+		DbQueryStatus result = new DbQueryStatus("OK", DbQueryExecResult.QUERY_OK);
+		return result;
 	}
 
 	@Override
