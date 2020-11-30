@@ -24,12 +24,15 @@ public class SongDalImpl implements SongDal {
 	@Override
 	public DbQueryStatus addSong(Song songToAdd) {
 		// TODO Auto-generated method stub
-	    Criteria criteira = Criteria.where(Song.KEY_SONG_NAME).is(songToAdd.getSongName())
-	        .and(Song.KEY_SONG_ALBUM).is(songToAdd.getSongAlbum())
-	        .and(Song.KEY_SONG_ARTIST_FULL_NAME).is(songToAdd.getSongArtistFullName());
-		if (this.db.exists(new Query(criteira), Song.class)) {
-          return new DbQueryStatus("Song Already Exist", DbQueryExecResult.QUERY_ERROR_GENERIC); 
-        }
+        /*
+         * Criteria criteira =
+         * Criteria.where(Song.KEY_SONG_NAME).is(songToAdd.getSongName())
+         * .and(Song.KEY_SONG_ALBUM).is(songToAdd.getSongAlbum())
+         * .and(Song.KEY_SONG_ARTIST_FULL_NAME).is(songToAdd.
+         * getSongArtistFullName()); if (this.db.exists(new Query(criteira),
+         * Song.class)) { return new DbQueryStatus("Song Already Exist",
+         * DbQueryExecResult.QUERY_ERROR_GENERIC); }
+         */
 		Map<String, String> data = new HashMap<>(); 
 		Song insertedSong = this.db.insert(songToAdd);
 		data.put(Song.KEY_SONG_NAME, songToAdd.getSongName()); 
