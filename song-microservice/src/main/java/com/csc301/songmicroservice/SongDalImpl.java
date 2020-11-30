@@ -105,6 +105,10 @@ public class SongDalImpl implements SongDal {
       }
       Update update = new Update(); 
       if(shouldDecrement) {
+        DbQueryStatus stat = findSongById(songId);
+        if(Long.parseLong(((Map<String, String>)stat.getData()).get("songAmountFavourites")) <= 0) {
+          return new DbQueryStatus("Can't have negative likes", DbQueryExecResult.QUERY_ERROR_GENERIC);  
+        }
         update.inc("songAmountFavourites", -1); 
       } else {
         update.inc("songAmountFavourites");
