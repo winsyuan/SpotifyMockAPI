@@ -7,7 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
+import com.mongodb.client.result.*;
 
 @Repository
 public class SongDalImpl implements SongDal {
@@ -29,12 +31,12 @@ public class SongDalImpl implements SongDal {
           return new DbQueryStatus("Song Already Exist", DbQueryExecResult.QUERY_ERROR_GENERIC); 
         }
 		Map<String, String> data = new HashMap<>(); 
-		this.db.insert(songToAdd);
+		Song insertedSong = this.db.insert(songToAdd);
 		data.put(Song.KEY_SONG_NAME, songToAdd.getSongName()); 
 		data.put(Song.KEY_SONG_ARTIST_FULL_NAME, songToAdd.getSongArtistFullName()); 
 		data.put(Song.KEY_SONG_ALBUM, songToAdd.getSongAlbum()); 
 		data.put("songAmountFavourites", String.valueOf(songToAdd.getSongAmountFavourites())); 
-		data.put("id", songToAdd.getId()); 
+		data.put("id", insertedSong.getId()); 
 		DbQueryStatus status = new DbQueryStatus("OK", DbQueryExecResult.QUERY_OK);
 		status.setData(data);
 		return status; 
@@ -81,12 +83,36 @@ public class SongDalImpl implements SongDal {
 	@Override
 	public DbQueryStatus deleteSongById(String songId) {
 		// TODO Auto-generated method stub
-		return null;
+	  Criteria criteira = Criteria.where("_id").is(songId);
+      Query query = new Query(criteira); 
+      if (!this.db.exists(query, Song.class)) {
+        return new DbQueryStatus("Song not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND); 
+      }
+      DeleteResult deleteResult = this.db.remove(query, Song.class);
+      if(deleteResult.getDeletedCount() <= 0) {
+        return new DbQueryStatus("Nothing deleted", DbQueryExecResult.QUERY_ERROR_GENERIC);
+      }
+      return new DbQueryStatus("OK", DbQueryExecResult.QUERY_OK);
 	}
 
 	@Override
 	public DbQueryStatus updateSongFavouritesCount(String songId, boolean shouldDecrement) {
 		// TODO Auto-generated method stub
-		return null;
+	  Criteria criteira = Criteria.where("_id").is(songId);
+      Query query = new Query(criteira); 
+      if (!this.db.exists(query, Song.class)) {
+        return new DbQueryStatus("Song not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND); 
+      }
+      Update update = new Update(); 
+      if(shouldDecrement) {
+        update.inc("songAmountFavourites", -1); 
+      } else {
+        update.inc("songAmountFavourites");
+      }
+      UpdateResult updateResult = this.db.updateFirst(query, update, Song.class); 
+      if(updateResult.getModifiedCount() <= 0) {
+        return new DbQueryStatus("Nothing updated", DbQueryExecResult.QUERY_ERROR_GENERIC);
+      }
+      return new DbQueryStatus("OK", DbQueryExecResult.QUERY_OK);
 	}
 }
