@@ -124,7 +124,16 @@ public class ProfileController {
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 
-		return null;
+//		check if songId is valid in localhost 3001?
+		DbQueryStatus status;
+		if(userName.equals(null) || songId.equals(null)) {
+			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+			return response;
+		}
+		status = playlistDriver.likeSong(userName, songId);
+		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+		return response;
 	}
 
 	@RequestMapping(value = "/unlikeSong/{userName}/{songId}", method = RequestMethod.PUT)
@@ -134,7 +143,18 @@ public class ProfileController {
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 
-		return null;
+//		check if songId is valid in localhost 3001?
+		DbQueryStatus status;
+		if(userName.equals(null) || songId.equals(null)) {
+			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+			return response;
+		}
+
+		status = playlistDriver.unlikeSong(userName, songId);
+
+		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+		return response;
 	}
 
 	@RequestMapping(value = "/deleteAllSongsFromDb/{songId}", method = RequestMethod.PUT)
@@ -143,7 +163,17 @@ public class ProfileController {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
-		
-		return null;
+//		check if songId is valid in localhost 3001?
+		DbQueryStatus status;
+		if(songId.equals(null)) {
+			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+			return response;
+		}
+
+		status = playlistDriver.deleteSongFromDb(songId);
+
+		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+		return response;
 	}
 }

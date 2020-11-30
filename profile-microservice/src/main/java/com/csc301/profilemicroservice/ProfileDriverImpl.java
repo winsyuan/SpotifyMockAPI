@@ -45,8 +45,9 @@ public class ProfileDriverImpl implements ProfileDriver {
 //		need to check if user is already in database
 		try (Session session = driver.session()) {
 			try (Transaction trans = session.beginTransaction()) {
-				String queryStr = "CREATE (p:profile {userName: $x, fullName: $y, password: $z})";
-				trans.run(queryStr, Values.parameters("x", userName, "y", fullName, "z", password));
+				String favList = userName + "-" + "favorites";
+				String queryStr = "CREATE (p:profile {userName: $x, fullName: $y, password: $z}) CREATE (w:playlist {plName : $s}) MERGE (p)-[relation:created]->(w)";
+				trans.run(queryStr, Values.parameters("x", userName, "y", fullName, "z", password, "s", favList));
 				trans.success();
 			} 
 			session.close();
@@ -73,7 +74,6 @@ public class ProfileDriverImpl implements ProfileDriver {
 	public DbQueryStatus unfollowFriend(String userName, String frndUserName) {
 		try (Session session = driver.session()) {
 			try (Transaction trans = session.beginTransaction()) {
-//				String queryStr = "MATCH (a:profile {userName: $x}), (b:profile {userName: $y}) MERGE (a)-[relation:follows]->(b)";
 				String queryStr = "MATCH ((:profile {userName: $x})-[r:follows]->(:profile {userName: $y})) DELETE r";
 				trans.run(queryStr, Values.parameters("x", userName, "y", frndUserName));
 				trans.success();
