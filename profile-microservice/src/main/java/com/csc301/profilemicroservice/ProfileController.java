@@ -135,8 +135,9 @@ public class ProfileController {
 		Request req = new Request.Builder().url("http://localhost:3001/getSongById/" + songId).get().build();
 		try {
 			Response res = client.newCall(req).execute();
-			if(!res.isSuccessful()) {
-			    throw new Exception(); 
+			
+			if(res.body().string().contains("Song not found")) {
+				throw new Exception(); 
 			}
 		} catch (Exception  e) {
 			status = new DbQueryStatus("Song node not found in MongoDB", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
@@ -164,8 +165,8 @@ public class ProfileController {
 		Request req = new Request.Builder().url("http://localhost:3001/getSongById/" + songId).get().build();
 		try {
 			Response res = client.newCall(req).execute();
-			if(!res.isSuccessful()) {
-			    throw new Exception(); 
+			if(res.body().string().contains("Song not found")) {
+				throw new Exception(); 
 			}
 		} catch (Exception  e) {
 			status = new DbQueryStatus("Song node not found in MongoDB", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
@@ -195,8 +196,8 @@ public class ProfileController {
 		Request req = new Request.Builder().url("http://localhost:3001/getSongById/" + songId).get().build();
 		try {
 			Response res = client.newCall(req).execute();
-			if(!res.isSuccessful()) {
-			    throw new Exception(); 
+			if(res.body().string().contains("Song not found")) {
+				throw new Exception(); 
 			}
 		} catch (Exception  e) {
 			status = new DbQueryStatus("Song node not found in MongoDB", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
