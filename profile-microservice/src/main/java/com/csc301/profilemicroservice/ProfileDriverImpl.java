@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.json.JSONObject;
+import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.Driver;
+import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
@@ -15,10 +17,15 @@ import org.springframework.stereotype.Repository;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.driver.v1.Value;
 import org.neo4j.driver.v1.Values;
+import org.neo4j.driver.v1.util.Pair;
 
 @Repository
 public class ProfileDriverImpl implements ProfileDriver {
 
+////	CHANGE THIS AFTER DONE TESTING
+//	public static String dbUri = "bolt://localhost:7687";
+//    public static Driver driver = GraphDatabase.driver(dbUri, AuthTokens.basic("neo4j","1234"));
+//    
 	Driver driver = ProfileMicroserviceApplication.driver;
 
 	public static void InitProfileDb() {
@@ -128,16 +135,37 @@ public class ProfileDriverImpl implements ProfileDriver {
 					exit = new DbQueryStatus("Username not found", DbQueryExecResult.QUERY_ERROR_GENERIC);
 					return exit;
 				}
-//				figure this out
-				String queryStr = "";
+				String queryStr = "MATCH (p:profile {userName : $x})-[relation:follows]->(b:profile) RETURN (b)";
 				StatementResult second = trans.run(queryStr, Values.parameters("x", userName));
-				
 			    JSONObject newobject = new JSONObject();
-
+				while(second.hasNext()) {
+					Record record = second.next();
+				    List<Pair<String, Value>> values = record.fields();
+				    String friendPlaylist = values.get(0).value().get("userName").asString() + "-favorites";
+//				    find their liked songs
+					String queryFriend = "MATCH ((:playlist {plName: $x})-[relation:includes]->(s:song)) RETURN s";
+					StatementResult res = trans.run(queryFriend, Values.parameters("x", friendPlaylist));
+					ArrayList<String> ids = new ArrayList<>();
+					while(res.hasNext()) {
+						Record songName = res.next();
+					    List<Pair<String, Value>> val = songName.fields();
+					    String songMongoId = val.get(0).value().get("songId").asString();
+					    ids.add(songMongoId);
+					}
+					newobject.put(values.get(0).value().get("userName").asString(), ids);
+				}
+//				System.out.println(newobject);
 				exit = new DbQueryStatus("OK", DbQueryExecResult.QUERY_OK);
-				exit.setData(null);
+				exit.setData(newobject);
 			}
 		}
 		return exit;
 	}
+	
+//	public static void main(String[] args) {
+//		ProfileDriverImpl test = new ProfileDriverImpl();
+//
+//		DbQueryStatus status = test.getAllSongFriendsLike("emily");
+//
+//	}
 }

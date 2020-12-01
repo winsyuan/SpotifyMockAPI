@@ -94,6 +94,7 @@ public class ProfileController {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
+//		format the data and actually get the songName from mongodb using the mongoid's
 
 		return null;
 	}
@@ -131,6 +132,17 @@ public class ProfileController {
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 			return response;
 		}
+		Request req = new Request.Builder().url("http://localhost:3001/getSongById/" + songId).get().build();
+		try {
+			Response res = client.newCall(req).execute();
+			if(!res.isSuccessful()) {
+			    throw new Exception(); 
+			}
+		} catch (Exception  e) {
+			status = new DbQueryStatus("Song node not found in MongoDB", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+			return response;
+		}
 		status = playlistDriver.likeSong(userName, songId);
 		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 		return response;
@@ -143,10 +155,20 @@ public class ProfileController {
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 
-//		check if songId is valid in localhost 3001?
 		DbQueryStatus status;
 		if(userName.equals(null) || songId.equals(null)) {
 			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+			return response;
+		}
+		Request req = new Request.Builder().url("http://localhost:3001/getSongById/" + songId).get().build();
+		try {
+			Response res = client.newCall(req).execute();
+			if(!res.isSuccessful()) {
+			    throw new Exception(); 
+			}
+		} catch (Exception  e) {
+			status = new DbQueryStatus("Song node not found in MongoDB", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 			return response;
 		}
@@ -170,7 +192,17 @@ public class ProfileController {
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 			return response;
 		}
-
+		Request req = new Request.Builder().url("http://localhost:3001/getSongById/" + songId).get().build();
+		try {
+			Response res = client.newCall(req).execute();
+			if(!res.isSuccessful()) {
+			    throw new Exception(); 
+			}
+		} catch (Exception  e) {
+			status = new DbQueryStatus("Song node not found in MongoDB", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+			return response;
+		}
 		status = playlistDriver.deleteSongFromDb(songId);
 
 		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
