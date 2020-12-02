@@ -142,7 +142,6 @@ public class ProfileDriverImpl implements ProfileDriver {
 					Record record = second.next();
 				    List<Pair<String, Value>> values = record.fields();
 				    String friendPlaylist = values.get(0).value().get("userName").asString() + "-favorites";
-//				    find their liked songs
 					String queryFriend = "MATCH ((:playlist {plName: $x})-[relation:includes]->(s:song)) RETURN s";
 					StatementResult res = trans.run(queryFriend, Values.parameters("x", friendPlaylist));
 					ArrayList<String> ids = new ArrayList<>();
@@ -154,7 +153,6 @@ public class ProfileDriverImpl implements ProfileDriver {
 					}
 					newobject.put(values.get(0).value().get("userName").asString(), ids);
 				}
-//				System.out.println(newobject);
 				exit = new DbQueryStatus("OK", DbQueryExecResult.QUERY_OK);
 				exit.setData(newobject);
 			}

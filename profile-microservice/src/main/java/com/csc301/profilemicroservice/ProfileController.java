@@ -1,5 +1,7 @@
 package com.csc301.profilemicroservice;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +23,7 @@ import okhttp3.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -95,8 +98,60 @@ public class ProfileController {
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 //		format the data and actually get the songName from mongodb using the mongoid's
-
-		return null;
+		DbQueryStatus status;
+		if(userName.equals(null)) {
+			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+			return response;
+		}
+		status = profileDriver.getAllSongFriendsLike(userName);
+		if (status.getdbQueryExecResult().equals(DbQueryExecResult.QUERY_ERROR_NOT_FOUND) || status.getdbQueryExecResult().equals(DbQueryExecResult.QUERY_ERROR_GENERIC)) {
+			status = new DbQueryStatus("Error finding friends", DbQueryExecResult.QUERY_ERROR_GENERIC);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), null);
+			return response;			
+		}
+		JSONObject output = (JSONObject) status.getData();
+		JSONObject newoutput = new JSONObject();
+//		use http://localhost:3001//getSongTitleById/{songId} to get all the titles
+		Iterator<String> it = output.keys();
+		
+		try {
+			while(it.hasNext()) {
+				String name = it.next();
+				ArrayList<String> titles = new ArrayList<>();
+				JSONArray ids = (JSONArray) output.get(name);
+				for(int i = 0; i < ids.length(); i++) {
+					Request req = new Request.Builder().url("http://localhost:3001/getSongTitleById/" + ids.get(i)).get().build();
+					try {
+						Response res = client.newCall(req).execute();
+						JSONObject test = new JSONObject(res.body().string());
+						String stat = (String) test.get("status");
+						if(stat.equals("OK")) {
+							String title = (String) test.get("data");
+							titles.add(title);
+						} else {
+							res.body().close();
+							throw new Exception();
+						};
+						res.body().close();
+					} catch (Exception e) {
+						status = new DbQueryStatus("Error getting song titles", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+						response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), null);
+						return response;	
+					}
+				}
+				newoutput.put(name, titles);
+			}
+		} catch (Exception e) {
+			status = new DbQueryStatus("Error getting song titles", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), null);
+			return response;	
+		}
+//		this isn't working
+//		syso line gives right output, postman output is different
+		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), newoutput);
+		System.out.println(response);
+		return response;
 	}
 
 
@@ -124,21 +179,22 @@ public class ProfileController {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
-
-//		check if songId is valid in localhost 3001?
 		DbQueryStatus status;
 		if(userName.equals(null) || songId.equals(null)) {
 			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 			return response;
 		}
+//		CALL LOCALHOST 3002 TO UPDATE?
 		Request req = new Request.Builder().url("http://localhost:3001/getSongById/" + songId).get().build();
 		try {
 			Response res = client.newCall(req).execute();
 			
 			if(res.body().string().contains("Song not found")) {
+				res.body().close();
 				throw new Exception(); 
 			}
+			res.body().close();
 		} catch (Exception  e) {
 			status = new DbQueryStatus("Song node not found in MongoDB", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
@@ -162,12 +218,15 @@ public class ProfileController {
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 			return response;
 		}
+//		CALL LOCALHOST 3002 TO UPDATE?
 		Request req = new Request.Builder().url("http://localhost:3001/getSongById/" + songId).get().build();
 		try {
 			Response res = client.newCall(req).execute();
 			if(res.body().string().contains("Song not found")) {
+				res.body().close();
 				throw new Exception(); 
 			}
+			res.body().close();
 		} catch (Exception  e) {
 			status = new DbQueryStatus("Song node not found in MongoDB", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
@@ -186,7 +245,6 @@ public class ProfileController {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
-//		check if songId is valid in localhost 3001?
 		DbQueryStatus status;
 		if(songId.equals(null)) {
 			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
@@ -197,8 +255,10 @@ public class ProfileController {
 		try {
 			Response res = client.newCall(req).execute();
 			if(res.body().string().contains("Song not found")) {
+				res.body().close();
 				throw new Exception(); 
 			}
+			res.body().close();
 		} catch (Exception  e) {
 			status = new DbQueryStatus("Song node not found in MongoDB", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
