@@ -50,7 +50,7 @@ public class ProfileDriverImpl implements ProfileDriver {
 	
 	@Override
 	public DbQueryStatus createUserProfile(String userName, String fullName, String password) {
-//		need to check if user is already in database
+//		need to check if user is already in database ************** it gives 500 status output CHANGE THIS
 		DbQueryStatus exit;
 		try (Session session = driver.session()) {
 			try (Transaction trans = session.beginTransaction()) {
@@ -78,13 +78,18 @@ public class ProfileDriverImpl implements ProfileDriver {
 //				checks if first user is in db
 				StatementResult first = trans.run("MATCH (a:profile {userName: $x}) RETURN a", Values.parameters("x", userName));
 				if(!first.hasNext()) {
-					exit = new DbQueryStatus("Username not found", DbQueryExecResult.QUERY_ERROR_GENERIC);
+					exit = new DbQueryStatus("Username not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 					return exit;
 				}
 //				checks if friend user is in db
 				StatementResult second = trans.run("MATCH (a:profile {userName: $y}) RETURN a", Values.parameters("y", frndUserName));
 				if(!second.hasNext()) {
-					exit = new DbQueryStatus("Friend username not found", DbQueryExecResult.QUERY_ERROR_GENERIC);
+					exit = new DbQueryStatus("Friend username not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+					return exit;
+				}
+				StatementResult third = trans.run("MATCH (a:profile {userName: $x}), (b:profile {userName: $y}) MATCH (a)-[r:follows]->(b) RETURN r", Values.parameters("x", userName, "y", frndUserName));
+				if(third.hasNext()) {
+					exit = new DbQueryStatus("Already following user", DbQueryExecResult.QUERY_ERROR_GENERIC);
 					return exit;
 				}
 				String queryStr = "MATCH (a:profile {userName: $x}), (b:profile {userName: $y}) MERGE (a)-[relation:follows]->(b)";
@@ -113,6 +118,11 @@ public class ProfileDriverImpl implements ProfileDriver {
 				StatementResult second = trans.run("MATCH (a:profile {userName: $y}) RETURN a", Values.parameters("y", frndUserName));
 				if(!second.hasNext()) {
 					exit = new DbQueryStatus("Friend username not found", DbQueryExecResult.QUERY_ERROR_GENERIC);
+					return exit;
+				}
+				StatementResult third = trans.run("MATCH (a:profile {userName: $x}), (b:profile {userName: $y}) MATCH (a)-[r:follows]->(b) RETURN r", Values.parameters("x", userName, "y", frndUserName));
+				if(!third.hasNext()) {
+					exit = new DbQueryStatus("User not following the other user", DbQueryExecResult.QUERY_ERROR_GENERIC);
 					return exit;
 				}
 				String queryStr = "MATCH ((:profile {userName: $x})-[r:follows]->(:profile {userName: $y})) DELETE r";

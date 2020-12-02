@@ -36,6 +36,17 @@ public class PlaylistDriverImpl implements PlaylistDriver {
 					String create = "CREATE (s:song {songId: $x})";
 					trans.run(create, Values.parameters("x", songId));
 				}
+				StatementResult second = trans.run("MATCH (p:profile {userName: $a}) RETURN p", Values.parameters("a", userName));
+				if(!second.hasNext()) {
+//					user doesn't exist
+					DbQueryStatus result = new DbQueryStatus("User not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+					return result;
+				}
+				StatementResult third = trans.run("MATCH (s:song {songId: $w}), (p:playlist {plName: $y}), (p)-[r:includes]->(s) RETURN r", Values.parameters("w", songId, "y", favList));
+				if(third.hasNext()) {
+					DbQueryStatus result = new DbQueryStatus("Relation already found", DbQueryExecResult.QUERY_ERROR_GENERIC);
+					return result;
+				}
 				String queryStr = "MATCH (s:song {songId: $w}), (p:playlist {plName: $y}) MERGE (p)-[relation:includes]->(s)";
 				trans.run(queryStr, Values.parameters("w", songId, "y", favList));
 				trans.success();
@@ -63,6 +74,12 @@ public class PlaylistDriverImpl implements PlaylistDriver {
 				if(!second.hasNext()) {
 //					user doesn't exist
 					DbQueryStatus result = new DbQueryStatus("User not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+					return result;
+				}
+				StatementResult third = trans.run("MATCH ((:playlist {plName: $x})-[r:includes]->(:song {songId: $y})) RETURN r", Values.parameters("x", favList, "y", songId));
+				if(!third.hasNext()) {
+//					relation doesnt exist
+					DbQueryStatus result = new DbQueryStatus("Relation not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 					return result;
 				}
 //				playlist must exist if user exist

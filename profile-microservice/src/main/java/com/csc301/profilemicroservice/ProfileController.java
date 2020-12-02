@@ -15,6 +15,7 @@ import com.csc301.profilemicroservice.Utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import okhttp3.Call;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -49,8 +50,6 @@ public class ProfileController {
 		this.playlistDriver = playlistDriver;
 	}
 
-//	figure out how to properly return the response
-//	fix the messages in response
 	@RequestMapping(value = "/profile", method = RequestMethod.POST)
 	public @ResponseBody Map<String, Object> addProfile(@RequestParam Map<String, String> params,
 			HttpServletRequest request) {
@@ -111,8 +110,7 @@ public class ProfileController {
 			return response;			
 		}
 		JSONObject output = (JSONObject) status.getData();
-		JSONObject newoutput = new JSONObject();
-//		use http://localhost:3001//getSongTitleById/{songId} to get all the titles
+		Map<String, Object> newoutput = new HashMap<>();
 		Iterator<String> it = output.keys();
 		
 		try {
@@ -147,10 +145,7 @@ public class ProfileController {
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), null);
 			return response;	
 		}
-//		this isn't working
-//		syso line gives right output, postman output is different
 		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), newoutput);
-		System.out.println(response);
 		return response;
 	}
 
@@ -189,7 +184,6 @@ public class ProfileController {
 		Request req = new Request.Builder().url("http://localhost:3001/getSongById/" + songId).get().build();
 		try {
 			Response res = client.newCall(req).execute();
-			
 			if(res.body().string().contains("Song not found")) {
 				res.body().close();
 				throw new Exception(); 
@@ -201,7 +195,24 @@ public class ProfileController {
 			return response;
 		}
 		status = playlistDriver.likeSong(userName, songId);
-		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+		if(!status.getdbQueryExecResult().toString().equals("QUERY_ERROR_GENERIC")) {
+			Request req1 = new Request.Builder().url("http://localhost:3001/updateSongFavouritesCount/" + songId + "?shouldDecrement=false").put(RequestBody.create("", MediaType.parse("application/json; charset=utf-8"))).build(); 
+			try {
+				Response res1 = client.newCall(req1).execute();
+				JSONObject test = new JSONObject(res1.body().string());
+				String stat = (String) test.get("status");
+				if(!stat.equals("OK")) {
+					res1.body().close();
+					throw new Exception();
+				};
+				res1.body().close();
+			} catch (Exception e) {
+				status = new DbQueryStatus("Error incrementing favorites in MongoDB", DbQueryExecResult.QUERY_ERROR_GENERIC);
+				response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), null);
+				return response;	
+			}
+		}
+		response = Utils.setResponseStatus(response, DbQueryExecResult.QUERY_OK, status.getData());
 		return response;
 	}
 
@@ -211,10 +222,16 @@ public class ProfileController {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
-
 		DbQueryStatus status;
 		if(userName.equals(null) || songId.equals(null)) {
 			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+			return response;
+		}
+
+		status = playlistDriver.unlikeSong(userName, songId);
+		if(status.getdbQueryExecResult().toString().equals("QUERY_ERROR_NOT_FOUND")) {
+			status = new DbQueryStatus("Relation not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 			return response;
 		}
@@ -233,8 +250,22 @@ public class ProfileController {
 			return response;
 		}
 
-		status = playlistDriver.unlikeSong(userName, songId);
-
+		Request req1 = new Request.Builder().url("http://localhost:3001/updateSongFavouritesCount/" + songId + "?shouldDecrement=true").put(RequestBody.create("", MediaType.parse("application/json; charset=utf-8"))).build(); 
+		try {
+			Response res1 = client.newCall(req1).execute();
+			JSONObject test = new JSONObject(res1.body().string());
+			String stat = (String) test.get("status");
+			if(!stat.equals("OK")) {
+				res1.body().close();
+				throw new Exception();
+			};
+			res1.body().close();
+		} catch (Exception e) {
+			status = new DbQueryStatus("Error incrementing favorites in MongoDB", DbQueryExecResult.QUERY_ERROR_GENERIC);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), null);
+			return response;	
+		}
+		
 		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 		return response;
 	}
