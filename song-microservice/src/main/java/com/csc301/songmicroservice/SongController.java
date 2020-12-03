@@ -17,8 +17,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import okhttp3.Call;
+import okhttp3.FormBody;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import javax.servlet.http.HttpServletRequest;
@@ -77,7 +80,7 @@ public class SongController {
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("DELETE %s", Utils.getUrl(request)));
 		
-		Request req = new Request.Builder().url("http://localhost:3002/deleteSongFromDb/"+songId).delete().build(); 
+		Request req = new Request.Builder().url("http://localhost:3002/deleteAllSongsFromDb/"+songId).put(RequestBody.create("", MediaType.parse("application/json; charset=utf-8"))).build(); 
 		DbQueryStatus dbQueryStatus; 
 		
 		try {

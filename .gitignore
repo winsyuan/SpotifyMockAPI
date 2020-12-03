@@ -3,3 +3,5 @@
 song-microservice/.settings/org.eclipse.jdt.core.prefs
 song-microservice/.classpath
 song-microservice/.settings/org.eclipse.jdt.apt.core.prefs
+profile-microservice/.classpath
+
