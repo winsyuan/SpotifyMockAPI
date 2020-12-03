@@ -27,21 +27,23 @@ public class PlaylistDriverImpl implements PlaylistDriver {
 
 	@Override
 	public DbQueryStatus likeSong(String userName, String songId) {
-//		check if song is an actual song in mongodb
 		try (Session session = driver.session()) {
-			try (Transaction trans = session.beginTransaction()) {
+			try (Transaction trans = session.beginTransaction()) {				
 				String favList = userName + "-" + "favorites";
+//				if the song is already in the db
 				StatementResult first = trans.run("MATCH (s:song {songId: $a}) RETURN s", Values.parameters("a", songId));
 				if(!first.hasNext()) {
+//					song node doesn't exist, create a song node
 					String create = "CREATE (s:song {songId: $x})";
 					trans.run(create, Values.parameters("x", songId));
 				}
+//				checks if the user is an actual node in db
 				StatementResult second = trans.run("MATCH (p:profile {userName: $a}) RETURN p", Values.parameters("a", userName));
 				if(!second.hasNext()) {
-//					user doesn't exist
 					DbQueryStatus result = new DbQueryStatus("User not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 					return result;
 				}
+//				checks there exist a relation already
 				StatementResult third = trans.run("MATCH (s:song {songId: $w}), (p:playlist {plName: $y}), (p)-[r:includes]->(s) RETURN r", Values.parameters("w", songId, "y", favList));
 				if(third.hasNext()) {
 					DbQueryStatus result = new DbQueryStatus("Relation already found", DbQueryExecResult.QUERY_ERROR_GENERIC);
@@ -53,8 +55,6 @@ public class PlaylistDriverImpl implements PlaylistDriver {
 			}
 			session.close();
 		}
-				
-//	    add to that playlist the song id `(:playlist)-[:includes]->(:song)`
 		DbQueryStatus result = new DbQueryStatus("OK", DbQueryExecResult.QUERY_OK);
 		return result;
 	}
@@ -64,25 +64,24 @@ public class PlaylistDriverImpl implements PlaylistDriver {
 		try (Session session = driver.session()) {
 			try (Transaction trans = session.beginTransaction()) {
 				String favList = userName + "-" + "favorites";
+//				checks if the song is an actual node in db
 				StatementResult first = trans.run("MATCH (s:song {songId: $a}) RETURN s", Values.parameters("a", songId));
 				if(!first.hasNext()) {
-//					song doesn't exit
 					DbQueryStatus result = new DbQueryStatus("Song node not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 					return result;
 				}
+//				checks if the user is an actual node in db
 				StatementResult second = trans.run("MATCH (p:profile {userName: $a}) RETURN p", Values.parameters("a", userName));
 				if(!second.hasNext()) {
-//					user doesn't exist
 					DbQueryStatus result = new DbQueryStatus("User not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 					return result;
 				}
+//				checks if that play list even includes the song
 				StatementResult third = trans.run("MATCH ((:playlist {plName: $x})-[r:includes]->(:song {songId: $y})) RETURN r", Values.parameters("x", favList, "y", songId));
 				if(!third.hasNext()) {
-//					relation doesnt exist
 					DbQueryStatus result = new DbQueryStatus("Relation not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 					return result;
 				}
-//				playlist must exist if user exist
 				String queryStr = "MATCH ((:playlist {plName: $x})-[r:includes]->(:song {songId: $y})) DELETE r ";
 				trans.run(queryStr, Values.parameters("x", favList, "y", songId));
 				trans.success();
@@ -95,12 +94,11 @@ public class PlaylistDriverImpl implements PlaylistDriver {
 
 	@Override
 	public DbQueryStatus deleteSongFromDb(String songId) {
-//		remove song node from db
 		try (Session session = driver.session()) {
 			try (Transaction trans = session.beginTransaction()) {
+//				checks if the song is an actual node in db
 				StatementResult first = trans.run("MATCH (p:song {songId: $a}) RETURN p", Values.parameters("a", songId));
 				if(!first.hasNext()) {
-//					song doesn't exit
 					DbQueryStatus result = new DbQueryStatus("Song node not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 					return result;
 				}

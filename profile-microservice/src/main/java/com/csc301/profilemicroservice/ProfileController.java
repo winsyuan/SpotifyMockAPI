@@ -85,6 +85,11 @@ public class ProfileController {
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 			return response;
 		}
+		if(userName.equals(friendUserName)) {
+			status = new DbQueryStatus("Cannot follow yourself", DbQueryExecResult.QUERY_ERROR_GENERIC);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+			return response;
+		}
 		status = profileDriver.followFriend(userName, friendUserName);
 		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 		return response;
@@ -96,7 +101,6 @@ public class ProfileController {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
-//		format the data and actually get the songName from mongodb using the mongoid's
 		DbQueryStatus status;
 		if(userName.equals(null)) {
 			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
@@ -180,7 +184,6 @@ public class ProfileController {
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 			return response;
 		}
-//		CALL LOCALHOST 3002 TO UPDATE?
 		Request req = new Request.Builder().url("http://localhost:3001/getSongById/" + songId).get().build();
 		try {
 			Response res = client.newCall(req).execute();
@@ -235,7 +238,6 @@ public class ProfileController {
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 			return response;
 		}
-//		CALL LOCALHOST 3002 TO UPDATE?
 		Request req = new Request.Builder().url("http://localhost:3001/getSongById/" + songId).get().build();
 		try {
 			Response res = client.newCall(req).execute();
@@ -276,6 +278,8 @@ public class ProfileController {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
+		
+//		THIS METHOD IS NOT TESTED ITS ALMOST ALWAYS RETURNING "OK" STATUS SO THAT IT WORKS WITH THE MONGODB CALL
 		DbQueryStatus status;
 		if(songId.equals(null)) {
 			status = new DbQueryStatus("Missing parameters", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
@@ -296,6 +300,12 @@ public class ProfileController {
 			return response;
 		}
 		status = playlistDriver.deleteSongFromDb(songId);
+		System.out.println(status.getdbQueryExecResult().toString().equals("QUERY_ERROR_NOT_FOUND"));
+		if(status.getdbQueryExecResult().toString().equals("QUERY_ERROR_NOT_FOUND")) {
+			status = new DbQueryStatus("OK", DbQueryExecResult.QUERY_OK);
+			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
+			return response;
+		} 
 
 		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());
 		return response;

@@ -22,10 +22,6 @@ import org.neo4j.driver.v1.util.Pair;
 @Repository
 public class ProfileDriverImpl implements ProfileDriver {
 
-////	CHANGE THIS AFTER DONE TESTING
-//	public static String dbUri = "bolt://localhost:7687";
-//    public static Driver driver = GraphDatabase.driver(dbUri, AuthTokens.basic("neo4j","1234"));
-//    
 	Driver driver = ProfileMicroserviceApplication.driver;
 
 	public static void InitProfileDb() {
@@ -50,7 +46,6 @@ public class ProfileDriverImpl implements ProfileDriver {
 	
 	@Override
 	public DbQueryStatus createUserProfile(String userName, String fullName, String password) {
-//		need to check if user is already in database ************** it gives 500 status output CHANGE THIS
 		DbQueryStatus exit;
 		try (Session session = driver.session()) {
 			try (Transaction trans = session.beginTransaction()) {
@@ -75,18 +70,19 @@ public class ProfileDriverImpl implements ProfileDriver {
 		DbQueryStatus exit;
 		try (Session session = driver.session()) {
 			try (Transaction trans = session.beginTransaction()) {
-//				checks if first user is in db
+//				checks if the user is an actual node in db
 				StatementResult first = trans.run("MATCH (a:profile {userName: $x}) RETURN a", Values.parameters("x", userName));
 				if(!first.hasNext()) {
 					exit = new DbQueryStatus("Username not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 					return exit;
 				}
-//				checks if friend user is in db
+//				checks if the friend user is an actual node in db
 				StatementResult second = trans.run("MATCH (a:profile {userName: $y}) RETURN a", Values.parameters("y", frndUserName));
 				if(!second.hasNext()) {
 					exit = new DbQueryStatus("Friend username not found", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 					return exit;
 				}
+//				checks if there exist a exist a relation with the two users
 				StatementResult third = trans.run("MATCH (a:profile {userName: $x}), (b:profile {userName: $y}) MATCH (a)-[r:follows]->(b) RETURN r", Values.parameters("x", userName, "y", frndUserName));
 				if(third.hasNext()) {
 					exit = new DbQueryStatus("Already following user", DbQueryExecResult.QUERY_ERROR_GENERIC);
@@ -108,18 +104,19 @@ public class ProfileDriverImpl implements ProfileDriver {
 
 		try (Session session = driver.session()) {
 			try (Transaction trans = session.beginTransaction()) {
-//				checks if first user is in db
+//				checks if the user is an actual node in db
 				StatementResult first = trans.run("MATCH (a:profile {userName: $x}) RETURN a", Values.parameters("x", userName));
 				if(!first.hasNext()) {
 					exit = new DbQueryStatus("Username not found", DbQueryExecResult.QUERY_ERROR_GENERIC);
 					return exit;
 				}
-//				checks if friend user is in db
+//				checks if the friend user is an actual node in db
 				StatementResult second = trans.run("MATCH (a:profile {userName: $y}) RETURN a", Values.parameters("y", frndUserName));
 				if(!second.hasNext()) {
 					exit = new DbQueryStatus("Friend username not found", DbQueryExecResult.QUERY_ERROR_GENERIC);
 					return exit;
 				}
+//				checks if the user is even following the "friend user"
 				StatementResult third = trans.run("MATCH (a:profile {userName: $x}), (b:profile {userName: $y}) MATCH (a)-[r:follows]->(b) RETURN r", Values.parameters("x", userName, "y", frndUserName));
 				if(!third.hasNext()) {
 					exit = new DbQueryStatus("User not following the other user", DbQueryExecResult.QUERY_ERROR_GENERIC);
@@ -141,13 +138,16 @@ public class ProfileDriverImpl implements ProfileDriver {
 		try (Session session = driver.session()) {
 			try (Transaction trans = session.beginTransaction()) {
 				StatementResult first = trans.run("MATCH (a:profile {userName: $x}) RETURN a", Values.parameters("x", userName));
+//				checks if the user is an actual node in db				
 				if(!first.hasNext()) {
 					exit = new DbQueryStatus("Username not found", DbQueryExecResult.QUERY_ERROR_GENERIC);
 					return exit;
 				}
+//				returns all the nodes that the user was following
 				String queryStr = "MATCH (p:profile {userName : $x})-[relation:follows]->(b:profile) RETURN (b)";
 				StatementResult second = trans.run(queryStr, Values.parameters("x", userName));
 			    JSONObject newobject = new JSONObject();
+//			    iterates over all the nodes and adds all the liked nodes into this object
 				while(second.hasNext()) {
 					Record record = second.next();
 				    List<Pair<String, Value>> values = record.fields();
@@ -169,11 +169,4 @@ public class ProfileDriverImpl implements ProfileDriver {
 		}
 		return exit;
 	}
-	
-//	public static void main(String[] args) {
-//		ProfileDriverImpl test = new ProfileDriverImpl();
-//
-//		DbQueryStatus status = test.getAllSongFriendsLike("emily");
-//
-//	}
 }
