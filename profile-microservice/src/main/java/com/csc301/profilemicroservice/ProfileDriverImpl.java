@@ -44,6 +44,9 @@ public class ProfileDriverImpl implements ProfileDriver {
 		}
 	}
 	
+	/**
+	 * Creates a new profile with username, fullname and password 
+	 */
 	@Override
 	public DbQueryStatus createUserProfile(String userName, String fullName, String password) {
 		DbQueryStatus exit;
@@ -54,7 +57,6 @@ public class ProfileDriverImpl implements ProfileDriver {
 				StatementResult result = trans.run(queryStr, Values.parameters("x", userName, "y", fullName, "z", password, "s", favList));
 				if(result.hasNext()) {
 					exit = new DbQueryStatus("OK", DbQueryExecResult.QUERY_OK);
-
 				} else {
 					exit = new DbQueryStatus("Error in creating profile", DbQueryExecResult.QUERY_ERROR_GENERIC);
 				}
@@ -65,6 +67,11 @@ public class ProfileDriverImpl implements ProfileDriver {
 		return exit;
 	}
 
+	/**
+	 * Checks if both users exist in the neo4j db
+	 * Checks if the user is already following the user
+	 * Creates the relation from user to friend
+	 */
 	@Override
 	public DbQueryStatus followFriend(String userName, String frndUserName) {
 		DbQueryStatus exit;
@@ -98,6 +105,11 @@ public class ProfileDriverImpl implements ProfileDriver {
 		return exit;
 	}
 
+	/**
+	 * Checks if user and friend user are profile nodes in neo4j
+	 * Checks if the user is following the friend user
+	 * Deletes the relation if the friend is following the user
+	 */
 	@Override
 	public DbQueryStatus unfollowFriend(String userName, String frndUserName) {
 		DbQueryStatus exit;
@@ -132,6 +144,11 @@ public class ProfileDriverImpl implements ProfileDriver {
 		return exit;
 	}
 
+	/**
+	 * Checks if user is a profile node in neo4j db
+	 * Gets all the profile nodes the user is following
+	 * Adds these nodes with their favorite songs into an list
+	 */
 	@Override
 	public DbQueryStatus getAllSongFriendsLike(String userName) {
 		DbQueryStatus exit;

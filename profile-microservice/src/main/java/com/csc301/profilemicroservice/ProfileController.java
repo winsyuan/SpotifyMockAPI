@@ -50,6 +50,12 @@ public class ProfileController {
 		this.playlistDriver = playlistDriver;
 	}
 
+	/**
+	 * 
+	 * @param params userName:String, fullName:String, password:String as parameters
+	 * @param request HTTP POST request
+	 * @return response HTTP response (including status)
+	 */
 	@RequestMapping(value = "/profile", method = RequestMethod.POST)
 	public @ResponseBody Map<String, Object> addProfile(@RequestParam Map<String, String> params,
 			HttpServletRequest request) {
@@ -72,6 +78,13 @@ public class ProfileController {
 		return response;
 	}
 
+	/**
+	 * 
+	 * @param userName:String username of user
+	 * @param friendUserName:String username of who user wants to follow
+	 * @param request: HTTP PUT request
+	 * @return response HTTP response (including status)
+	 */
 	@RequestMapping(value = "/followFriend/{userName}/{friendUserName}", method = RequestMethod.PUT)
 	public @ResponseBody Map<String, Object> followFriend(@PathVariable("userName") String userName,
 			@PathVariable("friendUserName") String friendUserName, HttpServletRequest request) {
@@ -95,6 +108,12 @@ public class ProfileController {
 		return response;
 	}
 
+	/**
+	 * 
+	 * @param userName:String username of  the user
+	 * @param request: HTTP GET request
+	 * @return response HTTP response (including status) 
+	 */
 	@RequestMapping(value = "/getAllFriendFavouriteSongTitles/{userName}", method = RequestMethod.GET)
 	public @ResponseBody Map<String, Object> getAllFriendFavouriteSongTitles(@PathVariable("userName") String userName,
 			HttpServletRequest request) {
@@ -114,22 +133,22 @@ public class ProfileController {
 			return response;			
 		}
 		JSONObject output = (JSONObject) status.getData();
-		Map<String, Object> newoutput = new HashMap<>();
-		Iterator<String> it = output.keys();
+		Map<String, Object> newOutput = new HashMap<>();
+		Iterator<String> friendList = output.keys();
 		
 		try {
-			while(it.hasNext()) {
-				String name = it.next();
+			while(friendList.hasNext()) {
+				String name = friendList.next();
 				ArrayList<String> titles = new ArrayList<>();
 				JSONArray ids = (JSONArray) output.get(name);
 				for(int i = 0; i < ids.length(); i++) {
 					Request req = new Request.Builder().url("http://localhost:3001/getSongTitleById/" + ids.get(i)).get().build();
 					try {
 						Response res = client.newCall(req).execute();
-						JSONObject test = new JSONObject(res.body().string());
-						String stat = (String) test.get("status");
+						JSONObject resBody = new JSONObject(res.body().string());
+						String stat = (String) resBody.get("status");
 						if(stat.equals("OK")) {
-							String title = (String) test.get("data");
+							String title = (String) resBody.get("data");
 							titles.add(title);
 						} else {
 							res.body().close();
@@ -142,18 +161,24 @@ public class ProfileController {
 						return response;	
 					}
 				}
-				newoutput.put(name, titles);
+				newOutput.put(name, titles);
 			}
 		} catch (Exception e) {
 			status = new DbQueryStatus("Error getting song titles", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), null);
 			return response;	
 		}
-		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), newoutput);
+		response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), newOutput);
 		return response;
 	}
 
-
+	/**
+	 * 
+	 * @param userName:String username of user
+	 * @param friendUserName:String username of who user wants to unfollow
+	 * @param request HTTP PUT request
+	 * @return response HTTP response (including status) 
+	 */
 	@RequestMapping(value = "/unfollowFriend/{userName}/{friendUserName}", method = RequestMethod.PUT)
 	public @ResponseBody Map<String, Object> unfollowFriend(@PathVariable("userName") String userName,
 			@PathVariable("friendUserName") String friendUserName, HttpServletRequest request) {
@@ -172,6 +197,13 @@ public class ProfileController {
 		return response;
 	}
 
+	/**
+	 * 
+	 * @param userName:String of username of user
+	 * @param songId: _id from song node MongoDb database
+	 * @param request HTTP PUT request
+	 * @return response HTTP response (including status) 
+	 */
 	@RequestMapping(value = "/likeSong/{userName}/{songId}", method = RequestMethod.PUT)
 	public @ResponseBody Map<String, Object> likeSong(@PathVariable("userName") String userName,
 			@PathVariable("songId") String songId, HttpServletRequest request) {
@@ -202,8 +234,8 @@ public class ProfileController {
 			Request req1 = new Request.Builder().url("http://localhost:3001/updateSongFavouritesCount/" + songId + "?shouldDecrement=false").put(RequestBody.create("", MediaType.parse("application/json; charset=utf-8"))).build(); 
 			try {
 				Response res1 = client.newCall(req1).execute();
-				JSONObject test = new JSONObject(res1.body().string());
-				String stat = (String) test.get("status");
+				JSONObject resBody = new JSONObject(res1.body().string());
+				String stat = (String) resBody.get("status");
 				if(!stat.equals("OK")) {
 					res1.body().close();
 					throw new Exception();
@@ -219,6 +251,13 @@ public class ProfileController {
 		return response;
 	}
 
+	/**
+	 * 
+	 * @param userName:String username of user
+	 * @param songId: _id from song node MongoDb database
+	 * @param request HTTP PUT request
+	 * @return response HTTP response (including status)
+	 */
 	@RequestMapping(value = "/unlikeSong/{userName}/{songId}", method = RequestMethod.PUT)
 	public @ResponseBody Map<String, Object> unlikeSong(@PathVariable("userName") String userName,
 			@PathVariable("songId") String songId, HttpServletRequest request) {
@@ -255,8 +294,8 @@ public class ProfileController {
 		Request req1 = new Request.Builder().url("http://localhost:3001/updateSongFavouritesCount/" + songId + "?shouldDecrement=true").put(RequestBody.create("", MediaType.parse("application/json; charset=utf-8"))).build(); 
 		try {
 			Response res1 = client.newCall(req1).execute();
-			JSONObject test = new JSONObject(res1.body().string());
-			String stat = (String) test.get("status");
+			JSONObject resBody = new JSONObject(res1.body().string());
+			String stat = (String) resBody.get("status");
 			if(!stat.equals("OK")) {
 				res1.body().close();
 				throw new Exception();
@@ -272,6 +311,12 @@ public class ProfileController {
 		return response;
 	}
 
+	/**
+	 * 
+	 * @param songId:String _id from song node in MongoDb
+	 * @param request HTTP PUT request
+	 * @return response HTTP response (including status)
+	 */
 	@RequestMapping(value = "/deleteAllSongsFromDb/{songId}", method = RequestMethod.PUT)
 	public @ResponseBody Map<String, Object> deleteAllSongsFromDb(@PathVariable("songId") String songId,
 			HttpServletRequest request) {
@@ -300,7 +345,6 @@ public class ProfileController {
 			return response;
 		}
 		status = playlistDriver.deleteSongFromDb(songId);
-		System.out.println(status.getdbQueryExecResult().toString().equals("QUERY_ERROR_NOT_FOUND"));
 		if(status.getdbQueryExecResult().toString().equals("QUERY_ERROR_NOT_FOUND")) {
 			status = new DbQueryStatus("OK", DbQueryExecResult.QUERY_OK);
 			response = Utils.setResponseStatus(response, status.getdbQueryExecResult(), status.getData());

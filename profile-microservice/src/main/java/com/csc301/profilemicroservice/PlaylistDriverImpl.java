@@ -25,6 +25,11 @@ public class PlaylistDriverImpl implements PlaylistDriver {
 		}
 	}
 
+	/**
+	 * Checks if the song node exist in Neo4j DB, if not then it will create 
+	 * a new song node, checks if user is an actual node and create a 
+	 * connection from the user's favorite's playlist to this song node
+	 */
 	@Override
 	public DbQueryStatus likeSong(String userName, String songId) {
 		try (Session session = driver.session()) {
@@ -59,6 +64,11 @@ public class PlaylistDriverImpl implements PlaylistDriver {
 		return result;
 	}
 
+	/**
+	 * Checks if song is an existing node in Neo4j db, if so then checks if user is 
+	 * an existing user in the db, if so check if the user playlist includes that
+	 * song node, and finally deletes that relation
+	 */
 	@Override
 	public DbQueryStatus unlikeSong(String userName, String songId) {
 		try (Session session = driver.session()) {
@@ -92,6 +102,9 @@ public class PlaylistDriverImpl implements PlaylistDriver {
 		return result;
 	}
 
+	/**
+	 * Checks if node exist in neo4j db and deletes the node
+	 */
 	@Override
 	public DbQueryStatus deleteSongFromDb(String songId) {
 		try (Session session = driver.session()) {
